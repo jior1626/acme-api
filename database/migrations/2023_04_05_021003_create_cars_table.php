@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('color');
             $table->string('brand');
             $table->enum('type', ['public','particular']);
-            $table->string('owner_id');
-            $table->string('driver_id');
+            $table->foreignId('owner_id');
+            $table->foreignId("driver_id")->nullable();
             $table->timestamps();
         });
     }

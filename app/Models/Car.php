@@ -29,10 +29,10 @@ class Car extends Model
     ];
 
     public function Owner(){
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function Driver(){
-        return $this->hasMany(Message::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

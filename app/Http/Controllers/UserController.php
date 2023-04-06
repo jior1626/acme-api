@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Car;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -12,12 +13,14 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $type = "";
-        if($request->get("type")) {
-            $type = $request->get("type");
-        }
 
-        $users = User::where("type", $type)->get();
+        $users = User::all();
+
+        if($request->get("type")) {
+            $users = $users->filter(function ($user) use ($request) {
+                return $user->type == $request->get("type");
+            });
+        }
        
         return response()->json($users);
     }
@@ -47,6 +50,15 @@ class UserController extends Controller
             'type' => 'required',
         ]);
 
+        if($request->type == "owner") {
+            $this->validate($request, [
+                'registration' => 'required|unique:cars',
+                'type_car' => 'required',
+                'brand' => 'required',
+                'color' => 'required',
+            ]);
+        }
+
         $newUser = new User();
         $newUser->nit = $request->nit;
         $newUser->firstname = $request->firstname;
@@ -57,6 +69,18 @@ class UserController extends Controller
         $newUser->city = $request->city;
         $newUser->type = $request->type;
         $newUser->save();
+
+        if($request->type == "owner") {
+
+            $newCar = new Car();
+            $newCar->registration = $request->registration;
+            $newCar->type = $request->type_car;
+            $newCar->brand = $request->brand;
+            $newCar->color = $request->color;
+
+            $newUser->OwnerCars()->save($newCar);
+        }
+        
 
         return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $newUser]);
     }
@@ -106,7 +130,19 @@ class UserController extends Controller
         $user->type = $request->type;
         $user->save();
 
-        return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $user]);
+        if($request->type == "owner") {
+
+            $car = Car::findOrFail($request->car_id);
+            $car->registration = $request->registration;
+            $car->type = $request->type_car;
+            $car->brand = $request->brand;
+            $car->color = $request->color;
+
+            $car->save();
+        }
+
+
+        return response()->json(["message" => "¡Usuario actualizado correctamente!", "data" => $user]);
     }
 
     /**
