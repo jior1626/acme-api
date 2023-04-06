@@ -58,7 +58,7 @@ class UserController extends Controller
         $newUser->type = $request->type;
         $newUser->save();
 
-        return response()->json(["message" => "Usuario creado correctamente", "data" => $newUser]);
+        return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $newUser]);
     }
 
     /**
@@ -106,7 +106,7 @@ class UserController extends Controller
         $user->type = $request->type;
         $user->save();
 
-        return response()->json(["message" => "Usuario creado correctamente", "data" => $user]);
+        return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $user]);
     }
 
     /**
@@ -118,6 +118,6 @@ class UserController extends Controller
 
         $user->delete();
 
-        return response()->json(["user" => "user deleted"]);
+        return response()->json(["message" => "¡Usuario borrado correctamente!"]);
     }
 }

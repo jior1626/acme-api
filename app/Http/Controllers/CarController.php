@@ -61,7 +61,7 @@ class CarController extends Controller
         $car->driver_id = $request->driver_id;
         $car->save();
 
-        return response()->json(["message" => "Vehiculo creado correctamente", "data" => $car]);
+        return response()->json(["message" => "¡Vehiculo creado correctamente!", "data" => $car]);
     }
 
     /**
@@ -106,7 +106,7 @@ class CarController extends Controller
         $car->driver_id = $request->driver_id;
         $car->save();
 
-        return response()->json(["message" => "Vehiculo actualizado correctamente", "data" => $car]);
+        return response()->json(["message" => "¡Vehiculo actualizado correctamente!", "data" => $car]);
     }
 
     /**
@@ -118,6 +118,6 @@ class CarController extends Controller
 
         $car->delete();
 
-        return response()->json(["car" => "car deleted"]);
+        return response()->json(["message" => "¡Vehiculo borrado correctamente!"]);
     }
 }
