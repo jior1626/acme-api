@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cars', function (Blueprint $table) {
             $table->id();
-            $table->string('registration');
+            $table->string('registration')->unique();
             $table->string('color');
             $table->string('brand');
             $table->enum('type', ['public','particular']);

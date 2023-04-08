@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Car;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Throwable;
+
+use Illuminate\Http\Response;
 
 class UserController extends Controller
 {
@@ -38,7 +43,6 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-
         $this->validate($request, [
             'nit' => 'required|unique:users',
             'firstname' => 'required',
@@ -50,39 +54,54 @@ class UserController extends Controller
             'type' => 'required',
         ]);
 
-        if($request->type == "owner") {
-            $this->validate($request, [
-                'registration' => 'required|unique:cars',
-                'type_car' => 'required',
-                'brand' => 'required',
-                'color' => 'required',
-            ]);
+       DB::beginTransaction();
+
+        try {
+
+            $newUser = new User();
+            $newUser->nit = $request->nit;
+            $newUser->firstname = $request->firstname;
+            $newUser->lastname = $request->lastname;
+            $newUser->surnames = $request->surnames;
+            $newUser->address = $request->address;
+            $newUser->phone = $request->phone;
+            $newUser->city = $request->city;
+            $newUser->type = $request->type;
+            $newUser->save();
+    
+            if($request->type == "owner") {
+                
+                foreach($request->cars as $item) {
+    
+                    $validation = Validator::make($item, [
+                        'registration' => 'required|unique:cars',
+                        'type' => 'required',
+                        'brand' => 'required',
+                        'color' => 'required',
+                    ]);
+
+                    if($validation->fails()) {
+                        return response()->json(["errors" => $validation->errors()])
+                        ->setStatusCode(Response::HTTP_BAD_REQUEST, Response::$statusTexts[Response::HTTP_BAD_REQUEST]);
+                    }
+    
+                    $newCar = new Car();
+                    $newCar->registration = $item["registration"];
+                    $newCar->type = $item["type"];
+                    $newCar->brand = $item["brand"];
+                    $newCar->color = $item["color"];
+                    $newUser->OwnerCars()->save($newCar);
+                }
+            }
+            
+           DB::commit();
+            
+            return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $newUser]);
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+            throw $e;
         }
-
-        $newUser = new User();
-        $newUser->nit = $request->nit;
-        $newUser->firstname = $request->firstname;
-        $newUser->lastname = $request->lastname;
-        $newUser->surnames = $request->surnames;
-        $newUser->address = $request->address;
-        $newUser->phone = $request->phone;
-        $newUser->city = $request->city;
-        $newUser->type = $request->type;
-        $newUser->save();
-
-        if($request->type == "owner") {
-
-            $newCar = new Car();
-            $newCar->registration = $request->registration;
-            $newCar->type = $request->type_car;
-            $newCar->brand = $request->brand;
-            $newCar->color = $request->color;
-
-            $newUser->OwnerCars()->save($newCar);
-        }
-        
-
-        return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $newUser]);
     }
 
     /**
@@ -132,15 +151,18 @@ class UserController extends Controller
 
         if($request->type == "owner") {
 
-            $car = Car::findOrFail($request->car_id);
-            $car->registration = $request->registration;
-            $car->type = $request->type_car;
-            $car->brand = $request->brand;
-            $car->color = $request->color;
-
-            $car->save();
+            $request->cars->foreach(function ($item) use ($user) {
+                $car = new Car();
+                if($item->id) {
+                    $car = Car::findOrFail($item->id);
+                }
+                $car->registration = $item->registration;
+                $car->type = $item->type_car;
+                $car->brand = $item->brand;
+                $car->color = $item->color;
+                $user->OwnerCars()->save($car);
+            });
         }
-
 
         return response()->json(["message" => "¡Usuario actualizado correctamente!", "data" => $user]);
     }
