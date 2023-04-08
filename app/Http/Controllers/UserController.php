@@ -54,7 +54,7 @@ class UserController extends Controller
             'type' => 'required',
         ]);
 
-       DB::beginTransaction();
+        DB::beginTransaction();
 
         try {
 
@@ -94,7 +94,7 @@ class UserController extends Controller
                 }
             }
             
-           DB::commit();
+            DB::commit();
             
             return response()->json(["message" => "¡Usuario creado correctamente!", "data" => $newUser]);
 
@@ -128,43 +128,66 @@ class UserController extends Controller
     public function update(Request $request, string $id)
     {
         $this->validate($request, [
-            'nit' => 'required|unique:users',
+            'nit' => 'required|unique:users,nit,'.$id,
             'firstname' => 'required',
             'lastname' => 'required',
             'surnames' => 'required',
             'address' => 'required',
-            'phone' => 'required|unique:users',
+            'phone' => 'required|unique:users,phone,'.$id,
             'city' => 'required',
             'type' => 'required',
         ]);
 
-        $user = User::findOrFail($id);
-        $user->nit = $request->nit;
-        $user->firstname = $request->firstname;
-        $user->lastname = $request->lastname;
-        $user->surnames = $request->surnames;
-        $user->address = $request->address;
-        $user->phone = $request->phone;
-        $user->city = $request->city;
-        $user->type = $request->type;
-        $user->save();
+        DB::beginTransaction();
 
-        if($request->type == "owner") {
+        try {
 
-            $request->cars->foreach(function ($item) use ($user) {
-                $car = new Car();
-                if($item->id) {
-                    $car = Car::findOrFail($item->id);
+            $user = User::findOrFail($id);
+            $user->nit = $request->nit;
+            $user->firstname = $request->firstname;
+            $user->lastname = $request->lastname;
+            $user->surnames = $request->surnames;
+            $user->address = $request->address;
+            $user->phone = $request->phone;
+            $user->city = $request->city;
+            $user->type = $request->type;
+            $user->save();
+
+            if($request->type == "owner") {
+                
+                foreach($request->cars as $car) {
+                    $updateCar = new Car();
+                    if($car['id'] !== "" || $car['id'] !== null) {
+                        $updateCar = Car::findOrFail($car['id']);
+                        $validation = Validator::make($car, [
+                            'registration' => 'required|unique:cars,registration,'.$car['id'],
+                            'type' => 'required',
+                            'brand' => 'required',
+                            'color' => 'required',
+                        ]);
+
+                        if($validation->fails()) {
+                            return response()->json(["errors" => $validation->errors()])
+                            ->setStatusCode(Response::HTTP_BAD_REQUEST, Response::$statusTexts[Response::HTTP_BAD_REQUEST]);
+                        }
+                    }
+
+                    $updateCar->registration = $car["registration"];
+                    $updateCar->type = $car["type"];
+                    $updateCar->brand = $car["brand"];
+                    $updateCar->color = $car["color"];
+                    $user->OwnerCars()->save($updateCar);
                 }
-                $car->registration = $item->registration;
-                $car->type = $item->type_car;
-                $car->brand = $item->brand;
-                $car->color = $item->color;
-                $user->OwnerCars()->save($car);
-            });
-        }
+            }
 
-        return response()->json(["message" => "¡Usuario actualizado correctamente!", "data" => $user]);
+            DB::commit();
+
+            return response()->json(["message" => "¡Usuario actualizado correctamente!", "data" => $user]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 
     /**
@@ -173,6 +196,10 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
+
+        if($user->type == "owner") {
+            $user->OwnerCars()->delete();
+        }
 
         $user->delete();
 

@@ -18,7 +18,8 @@ return new class extends Migration
             $table->string('brand');
             $table->enum('type', ['public','particular']);
             $table->foreignId('owner_id');
-            $table->foreignId("driver_id")->nullable();
+            $table->bigInteger('driver_id')->unsigned()->nullable();
+            $table->foreign("driver_id")->references('id')->on('users')->onDelete('SET NULL');
             $table->timestamps();
         });
     }
