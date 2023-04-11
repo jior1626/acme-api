@@ -11,6 +11,8 @@ use Throwable;
 
 use Illuminate\Http\Response;
 
+use function PHPUnit\Framework\isEmpty;
+
 class UserController extends Controller
 {
     /**
@@ -156,11 +158,11 @@ class UserController extends Controller
             if($request->type == "owner") {
                 
                 foreach($request->cars as $car) {
-                    $updateCar = new Car();
-                    if($car['id'] !== "" || $car['id'] !== null) {
+                    
+                    if(!isEmpty($car["id"])) {
                         $updateCar = Car::findOrFail($car['id']);
                         $validation = Validator::make($car, [
-                            'registration' => 'required|unique:cars,registration,'.$car['id'],
+                            'registration' => 'required|unique:cars,registration,'.  (int) $car['id'],
                             'type' => 'required',
                             'brand' => 'required',
                             'color' => 'required',
@@ -170,13 +172,20 @@ class UserController extends Controller
                             return response()->json(["errors" => $validation->errors()])
                             ->setStatusCode(Response::HTTP_BAD_REQUEST, Response::$statusTexts[Response::HTTP_BAD_REQUEST]);
                         }
-                    }
 
-                    $updateCar->registration = $car["registration"];
-                    $updateCar->type = $car["type"];
-                    $updateCar->brand = $car["brand"];
-                    $updateCar->color = $car["color"];
-                    $user->OwnerCars()->save($updateCar);
+                        $updateCar->registration = $car["registration"];
+                        $updateCar->type = $car["type"];
+                        $updateCar->brand = $car["brand"];
+                        $updateCar->color = $car["color"];
+                        $user->OwnerCars()->update($updateCar);
+                    } else {
+                        $updateCar = new Car();
+                        $updateCar->registration = $car["registration"];
+                        $updateCar->type = $car["type"];
+                        $updateCar->brand = $car["brand"];
+                        $updateCar->color = $car["color"];
+                        $user->OwnerCars()->save($updateCar);
+                    }
                 }
             }
 
