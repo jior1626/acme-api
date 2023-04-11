@@ -17,8 +17,8 @@ class CarFactory extends Factory
      */
     public function definition(): array
     {
-        $owner_id = User::all()->random()->id;
-        $driver_id = User::all()->random()->id;
+        $owner_id = User::where("type", "owner")->get()->random()->id;
+        $driver_id = User::where("type", "driver")->get()->random()->id;
         $driver_id = $driver_id == $owner_id ? User::all()->random()->id : $driver_id;
 
         return [

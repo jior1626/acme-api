@@ -25,4 +25,16 @@ class User extends Model
         'city',
         'type'
     ];
+
+    public $with = [
+        "OwnerCars"
+    ];
+
+    public function OwnerCars() {
+        return $this->hasMany(Car::class, "owner_id", 'id');
+    }
+
+    public function DriverCars() {
+        return $this->hasMany(Car::class, "driver_id", 'id');
+    }
 }

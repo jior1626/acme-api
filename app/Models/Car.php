@@ -23,16 +23,16 @@ class Car extends Model
         'driver_id'
     ];
 
-    protected $with = [
+    public $with = [
         "Owner",
         "Driver"
     ];
 
     public function Owner(){
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'owner_id');
     }
 
     public function Driver(){
-        return $this->hasMany(Message::class);
+        return $this->belongsTo(User::class, 'user_id', 'driver_id');
     }
 }
